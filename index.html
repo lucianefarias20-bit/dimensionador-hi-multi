@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dimensionador Hi‑Multi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: ferramenta de bolso do vendedor e do instalador; clara, confiante, sem ruído
+   IDEA: a etiqueta técnica da condensadora, que responde na hora e diz quanto cada ambiente recebe
+   PICTURE: painel teal com a condensadora indicada, medidor de simultaneidade e entrega por ambiente
+   COLOUR and TYPE: teal do catálogo Hi‑Multi dominante, branco, tinta grafite, âmbar e vermelho só para alertas; Figtree
+   LAYOUT: ambientes à esquerda, resultado vivo à direita; no celular empilha resultado, ambientes, materiais */
+:root{color-scheme:light dark;
+--bg:light-dark(#f3f7f6,#0b1413);--card:light-dark(#fff,#121f1e);--ink:light-dark(#11201f,#e5f2f0);
+--mute:light-dark(#566b69,#90a8a5);--line:light-dark(#dbe6e4,#233837);
+--teal:#008f81;--teal-d:light-dark(#00756a,#3fd0c0);--field:light-dark(#008f81,#07504a);--deep:light-dark(#006b61,#05403b);
+--soft:light-dark(#e2f4f1,#123a36);--warn:#e09b12;--warn-bg:light-dark(#fff5de,#3a2c0a);--bad:#d6473a;--bad-bg:light-dark(#fdecea,#3d1714);--ok:#1f9d57}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;overflow-x:clip}
+header{background:var(--field);color:#fff;padding:22px max(5vw,16px) 26px}
+header .in{max-width:1240px;margin:auto}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.05;margin:2px 0 0;font-weight:800;text-wrap:balance}
+header p{margin:6px 0 0;opacity:.92;max-width:62ch}
+.brand{font-weight:800;font-size:15px;opacity:.95}
+main{max-width:1240px;margin:auto;padding:24px max(5vw,16px) 56px;display:grid;gap:24px}
+.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media(max-width:920px){.top{grid-template-columns:minmax(0,1fr)}.res{order:-1}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+h2{font-size:20px;margin:0 0 4px;font-weight:700}
+.sub{color:var(--mute);font-size:14px;margin:0 0 16px}
+.obra{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:20px}.obra>div{grid-column:span 2}.obra>.w3{grid-column:span 3}
+@media(max-width:600px){.obra{grid-template-columns:minmax(0,1fr)}.obra>div,.obra>.w3{grid-column:auto}}
+label{font-size:13px;color:var(--mute);font-weight:600;display:block;margin-bottom:4px}
+input,select{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.room{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.room.err{border-color:var(--bad);background:var(--bad-bg)}
+.rh{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.tag{flex:none;width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--teal-d);display:grid;place-items:center;font-weight:800}
+.rh input{font-weight:700}
+.x{flex:none;width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:var(--mute);font-size:22px;cursor:pointer}
+.x:hover:not(:disabled){background:var(--bad-bg);color:var(--bad)}.x:disabled{opacity:.3}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.seg button{font:inherit;font-size:15px;font-weight:700;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;line-height:1.1}
+.seg button small{display:block;font-size:11px;font-weight:500;color:var(--mute)}
+.seg button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}.seg button[aria-pressed=true] small{color:#dff}
+.dr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+.model{font-size:13px;color:var(--mute);padding-bottom:12px;white-space:nowrap}
+.step{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-height:44px}
+.step button{flex:none;width:44px;height:42px;border:0;background:transparent;color:var(--teal-d);font-size:20px;font-weight:700;cursor:pointer}
+.step input{border:0;text-align:center;background:transparent;padding:0}
+.add{width:100%;min-height:52px;border:2px dashed var(--line);border-radius:14px;background:transparent;color:var(--teal-d);font:inherit;font-weight:700;cursor:pointer}
+.add:disabled{opacity:.45;cursor:not-allowed}
+.res{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;border-radius:16px;scrollbar-width:thin}
+@media(max-width:920px){.res{position:static}}
+.hero{background:var(--field);color:#fff;border-radius:16px;padding:22px}
+.hero .k{font-size:13px;font-weight:600;opacity:.85}
+.hero .big{font-size:clamp(30px,5vw,44px);font-weight:800;line-height:1.05;margin:4px 0}
+.hero .code{font-weight:600;opacity:.92}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.stats div{background:rgba(255,255,255,.14);border-radius:12px;padding:10px}
+.stats b{display:block;font-size:20px;white-space:nowrap}.stats span{font-size:12px;opacity:.88}
+.meter{margin-top:16px}
+.bar{position:relative;height:12px;border-radius:99px;background:rgba(255,255,255,.22)}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:#fff;transition:width .35s}
+.bar em{position:absolute;top:-4px;width:2px;height:20px;background:rgba(255,255,255,.75)}
+.mlab{display:flex;justify-content:space-between;font-size:12px;opacity:.85;margin-top:6px}
+@media(prefers-reduced-motion:reduce){.bar i{transition:none}}
+.deliv{margin-top:16px;background:var(--deep);border-radius:12px;padding:4px 12px}
+.deliv table{color:#fff;font-size:14px}.deliv th{color:#cfeeea;border-color:rgba(255,255,255,.18)}.deliv td{border-color:rgba(255,255,255,.12)}
+.alerts{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.alerts li{border-radius:12px;padding:10px 12px;font-size:14px;border-left:4px solid}
+.alerts .w{background:var(--warn-bg);border-color:var(--warn)}.alerts .e{background:var(--bad-bg);border-color:var(--bad)}.alerts .o{background:var(--soft);border-color:var(--ok)}
+.alt{margin-top:14px;font-size:14px;color:var(--mute)}
+.chip{font:inherit;font-size:14px;margin:6px 6px 0 0;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{border-color:var(--teal);color:var(--teal-d);font-weight:700;background:var(--soft)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-size:13px;color:var(--mute);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line)}
+td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.sec{font-weight:700;color:var(--teal-d);padding-top:16px}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.spec div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}
+.spec b{display:block;font-size:17px;white-space:nowrap}.spec span{font-size:12px;color:var(--mute)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:end}
+.btn{font:inherit;font-weight:700;min-height:46px;padding:0 18px;border-radius:12px;border:0;background:var(--teal);color:#fff;cursor:pointer}
+.btn.g{background:var(--soft);color:var(--teal-d)}
+.small{font-size:13px;color:var(--mute)}
+.foot{max-width:1240px;margin:-32px auto 40px;padding:0 max(5vw,16px)}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}.stats b{font-size:17px}.seg button small{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header><div class="in">
+  <div class="brand">Hisense · Hi‑Multi</div>
+  <h1>Dimensionador Multi Split</h1>
+  <p>Monte os ambientes e veja na hora a condensadora indicada, quanto cada ambiente recebe, a tubulação e a carga de gás.</p>
+</div></header>
+
+<main>
+ <div class="top">
+  <section class="card">
+    <h2>Informações do projeto</h2>
+    <div class="obra">
+      <div class="w3"><label for="oLoja">Loja</label><input id="oLoja" placeholder="Ex.: Loja Centro"></div>
+      <div class="w3"><label for="oVend">Nome do vendedor</label><input id="oVend" placeholder="Ex.: Carla Souza"></div>
+      <div><label for="oNome">Nome</label><input id="oNome" placeholder="Ex.: Residência Silva"></div>
+      <div><label for="oProp">Proposta</label><input id="oProp" placeholder="Ex.: P‑2026‑118"></div>
+      <div><label for="oData">Data</label><input id="oData" type="date"></div>
+    </div>
+    <h2>Ambientes</h2>
+    <p class="sub">Evaporadoras Hi Wall de 9.000 a 24.000 BTU/h, de 2 a 5 por sistema. Informe a capacidade e a distância de tubulação até a condensadora: o caminho real do tubo, com subidas, descidas e curvas, e não a distância em linha reta.</p>
+    <div id="rooms"></div>
+    <button class="add" id="addRoom">+ Adicionar ambiente</button>
+  </section>
+
+  <aside class="res" id="res" aria-live="polite"></aside>
+ </div>
+
+  <section class="card">
+    <h2>Lista de materiais</h2>
+    <p class="sub" id="bomSub"></p>
+    <div class="scroll"><table class="stack" id="bom"></table></div>
+    <div id="spec"></div>
+    <div class="tools">
+      <div style="width:220px"><label for="folga">Margem de compra de tubo (%)</label><input id="folga" type="number" min="0" max="50" value="10" aria-describedby="folgaH"></div>
+      <button class="btn" id="pdf" hidden>Baixar PDF</button>
+      <button class="btn g" id="copy">Copiar resumo</button>
+      <button class="btn g" id="reset">Limpar</button>
+      <span class="small" id="copied"></span>
+    </div>
+    <p class="small" id="folgaH" style="margin:8px 0 0">A margem soma metros ao tubo comprado para cobrir curvas, sobras de corte, flanges e ajustes de percurso em obra. Ela não entra no cálculo da carga de gás, que usa só o comprimento real dos ramais.</p>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<p class="foot small">Fonte: Catálogo Hi‑Multi Hisense (52 combinações homologadas, refrigeração e aquecimento). Simultaneidade = soma nominal das evaporadoras ÷ capacidade da condensadora. Especificações sujeitas a alteração sem aviso prévio. Carga adicional e instalação exclusivamente por profissionais autorizados.</p>
+
+<script>
+{
+const COMBOS={"AMW2-14U4RGC":{"09+09":{"f":{"ev":[2050,2050],"cap":[4100,1000,5500],"pot":[920,330,2300]},"sim":129,"q":{"ev":[2250,2250],"cap":[4500,1000,6000],"pot":[950,200,2300]}},"09+12":{"f":{"ev":[2000,2100],"cap":[4100,1000,5500],"pot":[920,330,2300]},"sim":150,"q":{"ev":[2150,2350],"cap":[4500,1000,6000],"pot":[950,200,2300]}}},"AMW2-18U4RXC":{"09+09":{"f":{"ev":[2500,2500],"cap":[5000,1200,6600],"pot":[1245,390,2500]},"sim":100,"q":{"ev":[2750,2750],"cap":[5500,1200,7000],"pot":[1300,290,2500]}},"09+12":{"f":{"ev":[2300,2700],"cap":[5000,1200,6600],"pot":[1245,390,2500]},"sim":117,"q":{"ev":[2500,3000],"cap":[5500,1200,7000],"pot":[1290,290,2500]}},"12+12":{"f":{"ev":[2500,2500],"cap":[5000,1200,6600],"pot":[1245,390,2500]},"sim":133,"q":{"ev":[2750,2750],"cap":[5500,1200,7000],"pot":[1280,290,2500]}}},"AMW4-24U4RJC":{"09+09":{"f":{"ev":[2500,2500],"cap":[5000,2000,7000],"pot":[1400,460,2200]},"sim":75,"q":{"ev":[3000,3000],"cap":[6000,2000,7500],"pot":[1590,435,2500]}},"09+12":{"f":{"ev":[2500,3500],"cap":[6000,2000,8000],"pot":[1570,500,3000]},"sim":88,"q":{"ev":[3300,3700],"cap":[7000,2000,9000],"pot":[1800,500,3500]}},"09+18":{"f":{"ev":[2500,4500],"cap":[7000,2000,10000],"pot":[1750,500,3900]},"sim":113,"q":{"ev":[2800,5200],"cap":[8000,2000,10000],"pot":[2000,500,3900]}},"12+12":{"f":{"ev":[3500,3500],"cap":[7000,2000,10000],"pot":[1750,500,3900]},"sim":100,"q":{"ev":[4000,4000],"cap":[8000,2000,10000],"pot":[2000,500,3900]}},"12+18":{"f":{"ev":[2800,4200],"cap":[7000,2000,10000],"pot":[1730,500,3900]},"sim":125,"q":{"ev":[3200,4800],"cap":[8000,2000,10000],"pot":[1980,500,3900]}},"18+18":{"f":{"ev":[3500,3500],"cap":[7000,2000,10000],"pot":[1710,500,3900]},"sim":150,"q":{"ev":[4000,4000],"cap":[8000,2000,10000],"pot":[1960,500,3900]}},"09+09+09":{"f":{"ev":[2333,2333,2334],"cap":[7000,2000,10000],"pot":[1750,500,3900]},"sim":113,"q":{"ev":[2666,2667,2667],"cap":[8000,2000,10000],"pot":[2000,500,3900]}},"09+09+12":{"f":{"ev":[2100,2100,2800],"cap":[7000,2000,10000],"pot":[1730,500,3900]},"sim":125,"q":{"ev":[2500,2500,3000],"cap":[8000,2000,10000],"pot":[1980,500,3900]}},"09+09+18":{"f":{"ev":[1800,1800,3400],"cap":[7000,2000,10000],"pot":[1710,500,3900]},"sim":150,"q":{"ev":[1900,1900,4200],"cap":[8000,2000,10000],"pot":[1960,500,3900]}},"09+12+12":{"f":{"ev":[2000,2500,2500],"cap":[7000,2000,10000],"pot":[1730,500,3900]},"sim":138,"q":{"ev":[2200,2900,2900],"cap":[8000,2000,10000],"pot":[1980,500,3900]}},"12+12+12":{"f":{"ev":[2333,2333,2334],"cap":[7000,2000,10000],"pot":[1710,500,3900]},"sim":150,"q":{"ev":[2666,2667,2667],"cap":[8000,2000,10000],"pot":[1960,500,3900]}}},"AMW5-36U4RQC":{"09+24":{"f":{"ev":[2500,7000],"cap":[9500,2500,12000],"pot":[2650,700,4500]},"sim":92,"q":{"ev":[3000,7000],"cap":[10000,3000,14000],"pot":[2850,700,5000]}},"12+18":{"f":{"ev":[3500,5000],"cap":[8500,2500,12000],"pot":[2650,700,4500]},"sim":83,"q":{"ev":[4000,5500],"cap":[9500,3000,14000],"pot":[2850,700,5000]}},"12+24":{"f":{"ev":[3200,6800],"cap":[10000,2500,12000],"pot":[2650,700,4500]},"sim":100,"q":{"ev":[4000,7000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"18+18":{"f":{"ev":[5000,5000],"cap":[10000,2500,12000],"pot":[2650,700,4500]},"sim":100,"q":{"ev":[5500,5500],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"18+24":{"f":{"ev":[4000,6000],"cap":[10000,2500,12000],"pot":[2650,700,4500]},"sim":117,"q":{"ev":[5000,6000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"24+24":{"f":{"ev":[5000,5000],"cap":[10000,2500,12000],"pot":[2650,700,4500]},"sim":133,"q":{"ev":[5500,5500],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+09+12":{"f":{"ev":[2500,2500,3500],"cap":[8500,2500,12000],"pot":[2650,700,4750]},"sim":83,"q":{"ev":[3000,3000,4000],"cap":[10000,3000,14000],"pot":[2850,700,5000]}},"09+09+18":{"f":{"ev":[2500,2500,5000],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":100,"q":{"ev":[3000,3000,5000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+09+24":{"f":{"ev":[2300,2300,5400],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":117,"q":{"ev":[2500,2500,6000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+12+12":{"f":{"ev":[2500,3500,3500],"cap":[9500,2500,12000],"pot":[2650,700,4750]},"sim":92,"q":{"ev":[2900,3800,3800],"cap":[10500,3000,14000],"pot":[2850,700,5000]}},"09+12+18":{"f":{"ev":[2500,3000,4500],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":108,"q":{"ev":[2500,3500,5000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+12+24":{"f":{"ev":[2000,2500,5500],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":125,"q":{"ev":[2000,3000,6000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+18+18":{"f":{"ev":[2000,4000,4000],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":125,"q":{"ev":[2000,4500,4500],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+18+24":{"f":{"ev":[2300,3000,4700],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":142,"q":{"ev":[2000,4000,5000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"12+12+12":{"f":{"ev":[3333,3333,3334],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":100,"q":{"ev":[3666,3667,3667],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"12+12+18":{"f":{"ev":[3000,3000,4000],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":117,"q":{"ev":[3000,3000,5000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"12+12+24":{"f":{"ev":[2500,2500,5000],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":133,"q":{"ev":[2800,2800,5400],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"12+18+18":{"f":{"ev":[3000,3500,3500],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":133,"q":{"ev":[3000,4000,4000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"12+18+24":{"f":{"ev":[2500,3500,5000],"cap":[11000,2500,12000],"pot":[2650,700,4750]},"sim":150,"q":{"ev":[2500,3500,5000],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"18+18+18":{"f":{"ev":[3333,3333,3334],"cap":[10000,2500,12000],"pot":[2650,700,4750]},"sim":150,"q":{"ev":[3666,3667,3667],"cap":[11000,3000,14000],"pot":[2850,700,5000]}},"09+09+09+09":{"f":{"ev":[2500,2500,2500,2500],"cap":[10000,2500,12000],"pot":[2680,700,5000]},"sim":100,"q":{"ev":[2750,2750,2750,2750],"cap":[11000,3000,14000],"pot":[2820,700,5000]}},"09+09+09+12":{"f":{"ev":[2200,2200,2200,3400],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":108,"q":{"ev":[2500,2500,2500,3500],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+09+18":{"f":{"ev":[2000,2000,2000,4000],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":125,"q":{"ev":[2300,2300,2300,4100],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+09+24":{"f":{"ev":[1900,1900,1900,4300],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":142,"q":{"ev":[2100,2100,2100,4700],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+12+12":{"f":{"ev":[2000,2000,3000,3000],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":117,"q":{"ev":[2500,2500,3000,3000],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+12+18":{"f":{"ev":[2000,2000,2500,3500],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":133,"q":{"ev":[2300,2300,3000,3400],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+12+24":{"f":{"ev":[2000,2000,2300,3700],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":150,"q":{"ev":[2100,2100,2800,4000],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+18+18":{"f":{"ev":[2000,2000,3000,3000],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":150,"q":{"ev":[2100,2100,3400,3400],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+12+12+12":{"f":{"ev":[1900,2700,2700,2700],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":125,"q":{"ev":[2000,3000,3000,3000],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+12+12+18":{"f":{"ev":[1900,2500,2500,3100],"cap":[10000,2500,12000],"pot":[2650,700,5000]},"sim":142,"q":{"ev":[1800,2800,2800,3600],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"12+12+12+12":{"f":{"ev":[2500,2500,2500,2500],"cap":[10000,2500,12000],"pot":[2600,700,5000]},"sim":133,"q":{"ev":[2750,2750,2750,2750],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"12+12+12+18":{"f":{"ev":[2100,2100,2100,3700],"cap":[10000,2500,12000],"pot":[2600,700,5000]},"sim":150,"q":{"ev":[2500,2500,2500,3500],"cap":[11000,3000,14000],"pot":[2800,700,5000]}},"09+09+09+09+09":{"f":{"ev":[2000,2000,2000,2000,2000],"cap":[10000,2500,12000],"pot":[2550,700,5000]},"sim":125,"q":{"ev":[2200,2200,2200,2200,2200],"cap":[11000,3000,14000],"pot":[2750,700,5000]}},"09+09+09+09+12":{"f":{"ev":[1800,1800,1800,1800,2800],"cap":[10000,2500,12000],"pot":[2550,700,5000]},"sim":133,"q":{"ev":[2000,2000,2000,2000,3000],"cap":[11000,3000,14000],"pot":[2750,700,5000]}},"09+09+09+09+18":{"f":{"ev":[1700,1700,1700,1700,3200],"cap":[10000,2500,12000],"pot":[2550,700,5000]},"sim":150,"q":{"ev":[1900,1900,1900,1900,3400],"cap":[11000,3000,14000],"pot":[2750,700,5000]}},"09+09+09+12+12":{"f":{"ev":[1700,1700,1700,2450,2450],"cap":[10000,2500,12000],"pot":[2550,700,5000]},"sim":142,"q":{"ev":[1800,1800,1800,2800,2800],"cap":[11000,3000,14000],"pot":[2730,700,5000]}}}};
+
+const EVAP={9000:{m:"AS-09UW4RYRCK04B"},12000:{m:"AS-12UW4RMRCK00B"},18000:{m:"AS-18UW4RWSCK01"},24000:{m:"AS-24UW4RBTCK02B"}};
+const COND=[
+ {m:"AMW2-14U4RGC",nome:"Hi‑Multi 14K",cap:14000,evMax:2,disj:15,ramal:20,total:30,des:15,fab:950,pre:10,ruido:47,dim:"715 × 540 × 240",peso:28.5},
+ {m:"AMW2-18U4RXC",nome:"Hi‑Multi 18K",cap:18000,evMax:2,disj:15,ramal:20,total:30,des:15,fab:1050,pre:10,ruido:49,dim:"810 × 580 × 280",peso:35},
+ {m:"AMW4-24U4RJC",nome:"Hi‑Multi 24K",cap:24000,evMax:3,totalN:{2:50,3:50},disj:25,ramal:25,total:60,des:15,fab:1750,pre:20,ruido:51,dim:"860 × 670 × 310",peso:48},
+ {m:"AMW5-36U4RQC",nome:"Hi‑Multi 36K",cap:36000,evMax:5,disj:32,ramal:25,total:80,des:15,fab:2200,pre:25,ruido:55,dim:"975 × 835 × 360",peso:69}];
+const PRE_N={2:10,3:15,4:20,5:25}, G_M=12, RAMAL_MIN=3, H2="7,5", SIM_ALVO=1.2, CAPS=[9000,12000,18000,24000];
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('pt-BR');
+const btu=w=>w*3.412;
+const fB=w=>w==null?'—':fmt(btu(w));
+const pct=v=>Math.round(v*100)+'%';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const keyOf=cs=>[...cs].sort((a,b)=>a-b).map(c=>String(c/1000).padStart(2,'0')).join('+');
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const defRooms=()=>[{nome:"Sala",cap:18000,dist:10},{nome:"Suíte",cap:12000,dist:8},{nome:"Quarto",cap:9000,dist:12}];
+let st=store.get('hiMulti_v2')||{rooms:defRooms(),obra:{},folga:10}, pick=null, last={};
+const save=()=>store.set('hiMulti_v2',st);
+
+function validFor(cs){const k=keyOf(cs);return COND.filter(c=>COMBOS[c.m][k]).map(c=>({c,k,row:COMBOS[c.m][k],sim:COMBOS[c.m][k].sim/100}))}
+
+function renderRooms(){
+  $('rooms').innerHTML=st.rooms.map((r,i)=>`<div class="room" data-i="${i}" id="room${i}">
+    <div class="rh"><span class="tag">${String.fromCharCode(65+i)}</span>
+      <input aria-label="Nome do ambiente" data-f="nome" value="${esc(r.nome)}">
+      <button class="x" data-del aria-label="Remover ambiente" ${st.rooms.length<=2?'disabled':''}>×</button></div>
+    <div class="seg" role="group" aria-label="Capacidade">${CAPS.map(c=>`<button data-cap="${c}" aria-pressed="${c===r.cap}">${c/1000}k<small>BTU/h</small></button>`).join('')}</div>
+    <div class="dr"><div><label for="dist${i}">Distância da tubulação (m)</label><div class="step"><button data-d="-1" aria-label="Diminuir">−</button><input id="dist${i}" data-f="dist" type="number" inputmode="decimal" min="3" step="1" value="${r.dist}"><button data-d="1" aria-label="Aumentar">+</button></div></div>
+    <div class="model">Hi Wall ${EVAP[r.cap].m}</div></div></div>`).join('');
+  $('addRoom').disabled=st.rooms.length>=5;
+}
+
+function suggestions(){
+  const out=[],seen=new Set();
+  st.rooms.forEach((r,i)=>CAPS.forEach(c=>{if(c===r.cap)return;const cs=st.rooms.map((x,j)=>j===i?c:x.cap),v=validFor(cs);
+    if(v.length){const t=`${r.nome}: ${r.cap/1000}k → ${c/1000}k`;if(!seen.has(t)){seen.add(t);out.push({i,c,t,d:Math.abs(c-r.cap),v})}}}));
+  if(st.rooms.length>2)st.rooms.forEach((r,i)=>{const cs=st.rooms.filter((_,j)=>j!==i).map(x=>x.cap);if(validFor(cs).length)out.push({i,rem:true,t:`Tirar ${r.nome} do sistema`,d:99999})});
+  return out.sort((a,b)=>a.d-b.d).slice(0,4);
+}
+
+function evaluate(){
+  const R=st.rooms,n=R.length,caps=R.map(r=>r.cap),tot=caps.reduce((a,b)=>a+b,0),tub=R.reduce((s,r)=>s+(+r.dist||0),0);
+  const valid=validFor(caps).sort((a,b)=>a.c.cap-b.c.cap);
+  const sel=valid.find(x=>x.c.m===pick)||valid.find(x=>x.sim<=SIM_ALVO)||[...valid].sort((a,b)=>a.sim-b.sim)[0]||null;
+  const max=sel?(sel.c.totalN?.[n]??sel.c.total):0;
+  return {n,tot,tub,valid,sel,max,pre:PRE_N[n]||10,key:keyOf(caps)};
+}
+
+function delivery(sel){ // mapeia colunas A..E (ordem crescente) para os ambientes
+  const order=st.rooms.map((r,i)=>({r,i})).sort((a,b)=>a.r.cap-b.r.cap||a.i-b.i);const out=[];
+  order.forEach((o,j)=>out[o.i]={f:sel.row.f?sel.row.f.ev[j]:null,q:sel.row.q?sel.row.q.ev[j]:null});return out;
+}
+
+function renderRes(E){
+  st.rooms.forEach((r,i)=>$('room'+i).classList.toggle('err',!(+r.dist>=RAMAL_MIN)||(E.sel&&r.dist>E.sel.c.ramal)));
+  if(!E.sel){
+    const sg=suggestions();
+    $('res').innerHTML=`<div class="hero"><div class="k">Condensadora indicada</div><div class="big" style="font-size:28px">Combinação não homologada</div>
+      <div class="code">${esc(E.key.replace(/\+/g,' + '))} kBTU/h · ${E.n} evaporadoras</div></div>
+      <ul class="alerts"><li class="e">Nenhuma condensadora Hi‑Multi tem essa combinação na tabela do catálogo. </li></ul>
+      ${sg.length?`<div class="alt">Ajustes que tornam o sistema válido:<br>${sg.map((s,k)=>`<button class="chip" data-sg="${k}">${esc(s.t)}</button>`).join('')}</div>`:''}`;
+    last.sg=sg;return;
+  }
+  const c=E.sel.c,s=E.sel.sim,row=E.sel.row,dl=delivery(E.sel),al=[];
+  if(row.ficha)al.push(['w',`Combinação aceita pela ficha técnica, mas o catálogo não traz a tabela de capacidade dela. A entrega por ambiente aparece como “—”.`]);
+  if(s>1)al.push(['w',`Simultaneidade de ${pct(s)}: com todos os ambientes ligados, cada evaporadora entrega menos que o nominal${row.ficha?'':' (veja a tabela acima)'}.`]);
+  else al.push(['o',`Simultaneidade de ${pct(s)}: com todos ligados, cada ambiente recebe perto do nominal.`]);
+  const curtos=st.rooms.filter(r=>+r.dist<RAMAL_MIN),longos=st.rooms.filter(r=>+r.dist>c.ramal);
+  if(curtos.length)al.push(['e',`Distância abaixo do mínimo de ${RAMAL_MIN} m: ${curtos.map(r=>esc(r.nome)).join(', ')}.`]);
+  if(longos.length)al.push(['e',`Distância acima do máximo de ${c.ramal} m por ambiente: ${longos.map(r=>esc(r.nome)).join(', ')}.`]);
+  if(E.tub>E.max)al.push(['e',`Tubulação total de ${fmt(E.tub)} m passa do máximo de ${E.max} m.`]);
+  const extra=Math.max(0,E.tub-E.pre)*G_M;
+  al.push(extra?['w',`Carga adicional de R32: (${fmt(E.tub)} − ${E.pre}) × ${G_M} g = ${fmt(extra)} g.`]:['o',`Tubulação total de ${fmt(E.tub)} m dentro do comprimento padrão de ${E.pre} m: sem carga adicional.`]);
+  al.push(['o',`Desnível máximo: ${c.des} m entre unidade interna e externa e ${H2} m entre unidades internas.`]);
+  const others=E.valid.length>1?`<div class="alt">Outras condensadoras homologadas para esta combinação:<br>${E.valid.map(x=>`<button class="chip" data-pick="${x.c.m}" aria-pressed="${x===E.sel}">${esc(x.c.nome)} · ${pct(x.sim)}</button>`).join('')}</div>`:'';
+  $('res').innerHTML=`<div class="hero">
+    <div class="k">Condensadora indicada</div><div class="big">${esc(c.nome)}</div><div class="code">${c.m} · 220 V mono · Quente e Frio</div>
+    <div class="stats"><div><b>${fmt(E.tot)}</b><span>BTU/h instalados</span></div>
+      <div><b>${fmt(E.tub)} m</b><span>de ${E.max} m de tubulação</span></div>
+      <div><b>${c.disj} A</b><span>disjuntor</span></div></div>
+    <div class="meter"><div class="k">Simultaneidade ${pct(s)}</div>
+      <div class="bar"><i style="width:${Math.min(s/1.5,1)*100}%"></i><em style="left:${100/1.5}%"></em></div>
+      <div class="mlab"><span>0%</span><span>100%</span><span>150%</span></div></div>
+    <div class="deliv"><table><thead><tr><th>Ambiente</th><th class="n">Nominal</th><th class="n">Frio, todos ligados</th><th class="n">Calor</th></tr></thead><tbody>
+      ${st.rooms.map((r,i)=>`<tr><td>${esc(r.nome)}</td><td class="n">${fmt(r.cap)}</td><td class="n">${fB(dl[i].f)}</td><td class="n">${fB(dl[i].q)}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>
+  <ul class="alerts">${al.map(([k,t])=>`<li class="${k}">${t}</li>`).join('')}</ul>${others}`;
+}
+
+function renderBom(E){
+  const sel=E.sel;
+  if(!sel){$('bom').innerHTML='';$('spec').innerHTML='';$('bomSub').textContent='Ajuste os ambientes para gerar a lista.';return}
+  const c=sel.c,f=1+(+st.folga||0)/100,m=E.tub*f,extra=Math.max(0,E.tub-E.pre)*G_M,rows=[];
+  $('bomSub').textContent=`${E.n} ambientes · ${c.nome} · margem de compra de ${st.folga||0}%`;
+  rows.push(`<tr><td colspan="4" class="sec">Equipamentos</td></tr>`,`<tr><td>Condensadora ${esc(c.nome)}</td><td>${c.m}</td><td>${(c.evMin||2)===c.evMax?c.evMax:(c.evMin||2)+' a '+c.evMax} evaporadoras</td><td class="n">1</td></tr>`);
+  const g={};st.rooms.forEach(r=>{(g[r.cap]=g[r.cap]||[]).push(r.nome)});
+  Object.keys(g).sort((a,b)=>a-b).forEach(k=>rows.push(`<tr><td>Evaporadora Hi Wall ${fmt(k)} BTU/h</td><td>${EVAP[k].m}</td><td>${esc(g[k].join(', '))}</td><td class="n">${g[k].length}</td></tr>`));
+  rows.push(`<tr><td colspan="4" class="sec">Tubulação de cobre (um par de tubos por ambiente)</td></tr>`,
+    `<tr><td>Tubo de líquido 1/4" (6,35 mm)</td><td></td><td>${fmt(E.tub)} m + margem</td><td class="n">${m.toLocaleString('pt-BR',{maximumFractionDigits:1})} m</td></tr>`,
+    `<tr><td>Tubo de gás 3/8" (9,52 mm)</td><td></td><td>${fmt(E.tub)} m + margem</td><td class="n">${m.toLocaleString('pt-BR',{maximumFractionDigits:1})} m</td></tr>`,
+    `<tr><td colspan="4" class="sec">Refrigerante e elétrica</td></tr>`,
+    `<tr><td>Carga de fábrica R32</td><td></td><td>cobre até ${E.pre} m</td><td class="n">${fmt(c.fab)} g</td></tr>`,
+    `<tr><td>Carga adicional R32</td><td></td><td>${G_M} g/m acima de ${E.pre} m</td><td class="n">${fmt(extra)} g</td></tr>`,
+    `<tr><td>Disjuntor da condensadora</td><td></td><td>220 V / 60 Hz / 1F</td><td class="n">${c.disj} A</td></tr>`);
+  $('bom').innerHTML=`<thead><tr><th>Item</th><th>Modelo</th><th>Observação</th><th class="n">Qtd.</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+  const r=sel.row;
+  $('spec').innerHTML=`<div class="spec">
+    ${r.f?`<div><b>${fmt(r.f.pot[0])} W</b><span>potência nominal no frio</span></div>
+    <div><b>${fmt(btu(r.f.cap[0]))}</b><span>BTU/h entregues no frio (total)</span></div>`:'<div><b>—</b><span>potência desta combinação não constam no catálogo</span></div>'}
+    <div><b>${c.dim}</b><span>L × A × P (mm)</span></div>
+    <div><b>${c.peso.toLocaleString('pt-BR')} kg</b><span>peso líquido</span></div></div>`;
+}
+
+function update(){const E=evaluate();last.E=E;renderRes(E);renderBom(E);save()}
+function full(){renderRooms();update()}
+
+function summary(){
+  const E=last.E,s=E.sel,o=st.obra;if(!s)return 'Combinação não homologada.';const dl=delivery(s),c=s.c,f=1+(+st.folga||0)/100;
+  return [`*Dimensionamento Hisense Hi‑Multi*`,o.nome&&`Nome: ${o.nome}`,o.loja&&`Loja: ${o.loja}`,o.vend&&`Vendedor: ${o.vend}`,o.prop&&`Proposta: ${o.prop}`,o.data&&`Data: ${o.data.split('-').reverse().join('/')}`,'',
+   `Condensadora: ${c.nome} (${c.m}) · disjuntor ${c.disj} A`,`Instalado: ${fmt(E.tot)} BTU/h · simultaneidade ${pct(s.sim)}`,'','Evaporadoras Hi Wall:',
+   ...st.rooms.map((r,i)=>`${String.fromCharCode(65+i)}. ${r.nome}: ${fmt(r.cap)} BTU/h (${EVAP[r.cap].m}), distância ${r.dist} m, ${dl[i].f==null?'entrega por ambiente não informada no catálogo':'entrega ~'+fB(dl[i].f)+' BTU/h no frio com todos ligados'}`),'',
+   `Tubos: 1/4" e 3/8", ${(E.tub*f).toLocaleString('pt-BR',{maximumFractionDigits:1})} m de cada (com ${st.folga||0}% de margem)`,
+   `Carga adicional R32: ${fmt(Math.max(0,E.tub-E.pre)*G_M)} g`].filter(x=>typeof x==='string').join('\n').replace(/\n{3,}/g,'\n\n');
+}
+
+const P=t=>String(t??'').replace(/[‐-–−]/g,'-').replace(/→/g,'->').replace(/[  ]/g,' ').replace(/[^\x00-\xff]/g,'');
+function buildPdf(){
+  const E=last.E,s=E.sel;if(!s)return null;const c=s.c,dl=delivery(s),o=st.obra,f=1+(+st.folga||0)/100;
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const W=210,M=14,T=[0,143,129],INK=[17,32,31],MU=[90,107,105];
+  doc.setFillColor(...T);doc.rect(0,0,W,39,'F');doc.setTextColor(255);
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('Hisense - Hi-Multi',M,11);
+  doc.setFontSize(20);doc.text('Resumo de dimensionamento',M,22);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text(P([o.loja&&'Loja: '+o.loja,o.vend&&'Vendedor: '+o.vend].filter(Boolean).join('   |   ')),M,34.5);
+  doc.text(P([o.nome&&'Nome: '+o.nome,o.prop&&'Proposta: '+o.prop,o.data&&'Data: '+o.data.split('-').reverse().join('/')].filter(Boolean).join('   |   ')||'Multi Split Full Inverter - Quente e Frio'),M,29.5);
+  let y=49;
+  doc.setDrawColor(...T);doc.setLineWidth(.6);doc.roundedRect(M,y-6,W-2*M,26,3,3);
+  doc.setFontSize(9);doc.setTextColor(...MU);doc.text('CONDENSADORA INDICADA',M+5,y);
+  doc.setFontSize(16);doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.text(P(c.nome+'   '+c.m),M+5,y+8);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text(P(`Instalado: ${fmt(E.tot)} BTU/h   |   Simultaneidade: ${pct(s.sim)}   |   Disjuntor: ${c.disj} A   |   220 V / 60 Hz / 1F`),M+5,y+15);
+  y+=30;
+  const head={fillColor:T,textColor:255,fontStyle:'bold',fontSize:9},base={font:'helvetica',fontSize:9.5,textColor:INK,cellPadding:2.2},alt={fillColor:[242,247,246]};
+  const sec=t=>{doc.setFont('helvetica','bold');doc.setFontSize(11.5);doc.setTextColor(...T);doc.text(t,M,y);y+=2.5};
+  sec('Ambientes e entrega com todos ligados');
+  doc.autoTable({startY:y,margin:{left:M,right:M},headStyles:head,styles:base,alternateRowStyles:alt,
+    head:[['','Ambiente','Evaporadora Hi Wall','Nominal (BTU/h)','Distância (m)','Frio (BTU/h)','Calor (BTU/h)']],
+    body:st.rooms.map((r,i)=>[String.fromCharCode(65+i),P(r.nome),EVAP[r.cap].m,fmt(r.cap),fmt(r.dist),fB(dl[i].f),fB(dl[i].q)]),
+    columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'}}});
+  y=doc.lastAutoTable.finalY+9;
+  sec('Lista de materiais');
+  const g={};st.rooms.forEach(r=>{(g[r.cap]=g[r.cap]||[]).push(r.nome)});
+  const m=(E.tub*f).toLocaleString('pt-BR',{maximumFractionDigits:1})+' m',extra=Math.max(0,E.tub-E.pre)*G_M;
+  doc.autoTable({startY:y,margin:{left:M,right:M},headStyles:head,styles:base,alternateRowStyles:alt,
+    head:[['Item','Modelo','Observação','Qtd.']],
+    body:[['Condensadora '+c.nome,c.m,'',1],
+      ...Object.keys(g).sort((a,b)=>a-b).map(k=>[`Evaporadora Hi Wall ${fmt(k)} BTU/h`,EVAP[k].m,g[k].join(', '),g[k].length]),
+      ['Tubo de líquido 1/4" (6,35 mm)','',`${fmt(E.tub)} m + ${st.folga||0}% de margem`,m],
+      ['Tubo de gás 3/8" (9,52 mm)','',`${fmt(E.tub)} m + ${st.folga||0}% de margem`,m],
+      ['Carga de fábrica R32','',`cobre até ${E.pre} m`,fmt(c.fab)+' g'],
+      ['Carga adicional R32','',`(${fmt(E.tub)} - ${E.pre}) × ${G_M} g/m`,fmt(extra)+' g'],
+      ['Disjuntor da condensadora','','220 V / 60 Hz / 1F',c.disj+' A']].map(r=>r.map(P)),
+    columnStyles:{3:{halign:'right'}}});
+  y=doc.lastAutoTable.finalY+9;
+  sec('Limites de instalação e dados técnicos');
+  const r=s.row;
+  doc.autoTable({startY:y,margin:{left:M,right:M},styles:base,alternateRowStyles:alt,theme:'plain',
+    body:[['Distância mín. / máx. por ambiente',`${RAMAL_MIN} m / ${c.ramal} m`,'Potência nominal (frio)',r.f?fmt(r.f.pot[0])+' W':'não informado'],
+      ['Tubulação total (atual / máx.)',`${fmt(E.tub)} m / ${E.max} m`,'Capacidade total (frio)',r.f?fmt(btu(r.f.cap[0]))+' BTU/h':'não informado'],
+      ['Desnível interna × externa',`${c.des} m`,'Dimensões L × A × P',c.dim+' mm'],
+      ['Desnível entre internas',`${H2} m`,'Peso líquido',c.peso.toLocaleString('pt-BR')+' kg'],
+      [`Sem carga adicional (${E.n} unidades)`,`${E.pre} m`,'','']].map(x=>x.map(P)),
+    columnStyles:{0:{textColor:MU},2:{textColor:MU},1:{fontStyle:'bold'},3:{fontStyle:'bold'}}});
+  y=doc.lastAutoTable.finalY+8;
+  const notes=[];
+  if(r.ficha)notes.push('Combinação aceita pela ficha técnica; o catálogo não traz a capacidade entregue por ambiente nem a potência desta combinação.');
+  if(s.sim>1)notes.push(`Com simultaneidade de ${pct(s.sim)}, quando todos os ambientes operam juntos a capacidade da condensadora é dividida e cada evaporadora entrega menos que o nominal, conforme a tabela de ambientes.`);
+  st.rooms.forEach(x=>{if(+x.dist<RAMAL_MIN||+x.dist>c.ramal)notes.push(`Atenção: a distância de ${x.nome} (${x.dist} m) está fora do limite de ${RAMAL_MIN} a ${c.ramal} m.`)});
+  if(E.tub>E.max)notes.push(`Atenção: a tubulação total passa do máximo de ${E.max} m.`);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...MU);
+  notes.forEach(n=>{const l=doc.splitTextToSize(P(n),W-2*M);doc.text(l,M,y);y+=l.length*4.2+1.5});
+  doc.setFontSize(7.5);doc.setTextColor(130);
+  doc.text(doc.splitTextToSize(P('Fonte: Catálogo Hi-Multi Hisense (combinações homologadas). Especificações sujeitas a alteração sem aviso prévio. Instalação e carga adicional exclusivamente por profissionais autorizados.'),W-2*M),M,286);
+  return doc;
+}
+let dls=null;
+if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{dls=d;if(d&&window.jspdf)$('pdf').hidden=false}).catch(()=>{});
+else if(window.jspdf)$('pdf').hidden=false;
+$('pdf').onclick=async()=>{const doc=buildPdf();if(!doc){$('copied').textContent='Ajuste para uma combinação homologada antes de gerar o PDF.';return}
+  const nome=('Hi-Multi '+(st.obra.nome||'dimensionamento')).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'.pdf';
+  if(!dls){doc.save(nome);$('copied').textContent='PDF gerado.';return}
+  try{await dls.save({filename:nome,data:doc.output('arraybuffer')});$('copied').textContent='PDF salvo.'}
+  catch(err){$('copied').textContent=err&&err.code==='declined'?'Download cancelado.':'Não foi possível baixar o PDF aqui.'}};
+window.__buildPdf=buildPdf;
+$('oNome').value=st.obra.nome||'';$('oLoja').value=st.obra.loja||'';$('oVend').value=st.obra.vend||'';$('oProp').value=st.obra.prop||'';$('oData').value=st.obra.data||new Date().toISOString().slice(0,10);st.obra.data=$('oData').value;$('folga').value=st.folga;
+full();
+
+$('rooms').addEventListener('click',e=>{const room=e.target.closest('.room');if(!room)return;const i=+room.dataset.i,r=st.rooms[i];
+  const cb=e.target.closest('[data-cap]'),d=e.target.closest('[data-d]'),x=e.target.closest('[data-del]');
+  if(cb){r.cap=+cb.dataset.cap;pick=null;full()}
+  else if(d){r.dist=Math.max(1,(+r.dist||0)+(+d.dataset.d));room.querySelector('[data-f=dist]').value=r.dist;update()}
+  else if(x&&st.rooms.length>2){st.rooms.splice(i,1);pick=null;full()}});
+$('rooms').addEventListener('input',e=>{const f=e.target.dataset.f;if(!f)return;const r=st.rooms[+e.target.closest('.room').dataset.i];r[f]=f==='nome'?e.target.value:+e.target.value;update()});
+$('addRoom').onclick=()=>{const nm=['Quarto 2','Escritório','Quarto 3','Cozinha'];st.rooms.push({nome:nm[st.rooms.length-2]||'Ambiente',cap:9000,dist:10});pick=null;full()};
+$('res').addEventListener('click',e=>{const p=e.target.closest('[data-pick]'),g=e.target.closest('[data-sg]');
+  if(p){pick=p.dataset.pick;update()}
+  if(g){const s=last.sg[+g.dataset.sg];if(s.rem)st.rooms.splice(s.i,1);else st.rooms[s.i].cap=s.c;pick=null;full()}});
+[['oLoja','loja'],['oVend','vend'],['oNome','nome'],['oProp','prop'],['oData','data']].forEach(([id,k])=>$(id).addEventListener('input',e=>{st.obra[k]=e.target.value;save()}));
+$('folga').oninput=e=>{st.folga=+e.target.value;update()};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(summary());$('copied').textContent='Resumo copiado. Cole no WhatsApp ou no e‑mail.'}catch(err){$('copied').textContent='Não foi possível copiar neste navegador.'}};
+$('reset').onclick=()=>{st={rooms:defRooms(),obra:{loja:st.obra.loja,vend:st.obra.vend,data:new Date().toISOString().slice(0,10)},folga:10};pick=null;$('oNome').value='';$('oProp').value='';$('oData').value=st.obra.data;$('folga').value=10;full()};
+}
+</script>
+</body>
+</html>
