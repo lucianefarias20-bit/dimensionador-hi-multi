@@ -20,11 +20,9 @@
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;overflow-x:clip}
-header{background:var(--field);color:#fff;padding:22px max(5vw,16px) 26px}
-header .in{max-width:1240px;margin:auto}
-h1{font-size:clamp(28px,4vw,40px);line-height:1.05;margin:2px 0 0;font-weight:800;text-wrap:balance}
-header p{margin:6px 0 0;opacity:.92;max-width:62ch}
-.brand{font-weight:800;font-size:15px;opacity:.95}
+.banner{background:#02575c;line-height:0}
+.banner img{display:block;width:100%;height:auto}
+@media(max-width:600px){.banner img{height:150px;object-fit:cover;object-position:left center}}
 main{max-width:1240px;margin:auto;padding:24px max(5vw,16px) 56px;display:grid;gap:24px}
 .top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
 @media(max-width:920px){.top{grid-template-columns:minmax(0,1fr)}.res{order:-1}}
@@ -96,11 +94,7 @@ tr:last-child td{border-bottom:0}
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
 <body>
-<header><div class="in">
-  <div class="brand">Hisense · Hi‑Multi</div>
-  <h1>Dimensionador Multi Split</h1>
-  <p>Monte os ambientes e veja na hora a condensadora indicada, quanto cada ambiente recebe, a tubulação e a carga de gás.</p>
-</div></header>
+<header class="banner"><img src="banner.jpg" width="2172" height="482" alt="Hisense Multi Split. Dimensionador Multi Split: monte os ambientes e veja na hora a condensadora indicada, quanto cada ambiente recebe, a tubulação e a carga de gás."></header>
 
 <main>
  <div class="top">
