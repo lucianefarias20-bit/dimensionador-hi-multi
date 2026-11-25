@@ -20,6 +20,16 @@
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;overflow-x:clip}
+[hidden]{display:none!important}
+.tabs{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs .in{max-width:1240px;margin:auto;padding:0 max(5vw,16px);display:flex;gap:4px}
+.tabs button{font:inherit;font-size:16px;font-weight:700;min-height:52px;padding:0 18px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--mute);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--teal-d);border-bottom-color:var(--teal-d)}
+.ctg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:600px){.ctg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.seg.s2{grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+.ctline{margin:10px 0 0;font-size:14px;color:var(--mute)}.ctline b{color:var(--ink)}.ctline .badtxt{color:var(--bad)}
+.btn.light{background:#fff;color:#024447;margin-top:16px;width:100%}.btn:disabled{opacity:.45;cursor:not-allowed}
 .banner{background:#02575c;line-height:0}
 .banner img{display:block;width:100%;height:auto}
 @media(max-width:600px){.banner img{height:150px;object-fit:cover;object-position:left center}}
@@ -52,7 +62,7 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid 
 .step input{border:0;text-align:center;background:transparent;padding:0}
 .add{width:100%;min-height:52px;border:2px dashed var(--line);border-radius:14px;background:transparent;color:var(--teal-d);font:inherit;font-weight:700;cursor:pointer}
 .add:disabled{opacity:.45;cursor:not-allowed}
-.res{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;border-radius:16px;scrollbar-width:thin}
+.res{position:sticky;top:68px;max-height:calc(100vh - 84px);overflow-y:auto;border-radius:16px;scrollbar-width:thin}
 @media(max-width:920px){.res{position:static}}
 .hero{background:var(--field);box-shadow:inset 0 0 0 1px rgba(124,232,227,.18);color:#fff;border-radius:16px;padding:22px}
 .hero .k{font-size:13px;font-weight:600;opacity:.85}
@@ -96,7 +106,8 @@ tr:last-child td{border-bottom:0}
 <body>
 <header class="banner"><img src="banner.jpg" width="2172" height="482" alt="Hisense Multi Split. Dimensionador Multi Split: monte os ambientes e veja na hora a condensadora indicada, quanto cada ambiente recebe, a tubulação e a carga de gás."></header>
 
-<main>
+<nav class="tabs"><div class="in" role="tablist"><button role="tab" data-tab="dimensionador" aria-selected="true">Dimensionador</button><button role="tab" data-tab="carga" aria-selected="false">Carga térmica</button></div></nav>
+<main id="pgDim">
  <div class="top">
   <section class="card">
     <h2>Informações do projeto</h2>
@@ -130,6 +141,18 @@ tr:last-child td{border-bottom:0}
     </div>
     <p class="small" id="folgaH" style="margin:8px 0 0">A margem soma metros ao tubo comprado para cobrir curvas, sobras de corte, flanges e ajustes de percurso em obra. Ela não entra no cálculo da carga de gás, que usa só o comprimento real dos ramais.</p>
   </section>
+</main>
+<main id="pgCarga" hidden>
+ <div class="top">
+  <section class="card">
+    <h2>Carga térmica por ambiente</h2>
+    <p class="sub">Informe a área, se bate sol à tarde, quantas pessoas ficam no ambiente e quantos eletrônicos ficam ligados. A ferramenta indica a evaporadora e leva os ambientes direto para o dimensionador.</p>
+    <div id="ctRooms"></div>
+    <button class="add" id="ctAdd">+ Adicionar ambiente</button>
+    <div class="tools"><button class="btn g" id="ctReset">Limpar</button></div>
+  </section>
+  <aside class="res" id="ctRes" aria-live="polite"></aside>
+ </div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -336,6 +359,70 @@ $('pdf').onclick=async()=>{const doc=buildPdf();if(!doc){$('copied').textContent
 window.__buildPdf=buildPdf;
 $('oNome').value=st.obra.nome||'';$('oLoja').value=st.obra.loja||'';$('oVend').value=st.obra.vend||'';$('oProp').value=st.obra.prop||'';$('oData').value=st.obra.data||new Date().toISOString().slice(0,10);st.obra.data=$('oData').value;$('folga').value=st.folga;
 full();
+
+/* ===== Carga térmica (estimativa simplificada) ===== */
+const defCT=()=>[{nome:"Sala",area:20,sol:true,pes:3,ele:2},{nome:"Suíte",area:14,sol:false,pes:2,ele:1},{nome:"Quarto",area:10,sol:false,pes:1,ele:1}];
+if(!Array.isArray(st.ct)||!st.ct.length)st.ct=defCT();
+const need=r=>(+r.area||0)*(r.sol?800:600)+Math.max(0,(+r.pes||1)-1)*600+(+r.ele||0)*600;
+const recCap=n=>CAPS.find(c=>c>=n)||null;
+const num=(v,d=1)=>(+v||0).toLocaleString('pt-BR',{maximumFractionDigits:d});
+const stepper=(k,v,lab,i,step,min)=>`<div><label for="${k}${i}">${lab}</label><div class="step"><button data-k="${k}" data-d="${-step}" data-min="${min}" aria-label="Diminuir">−</button><input id="${k}${i}" data-k="${k}" type="number" inputmode="decimal" min="${min}" step="${step}" value="${v}"><button data-k="${k}" data-d="${step}" data-min="${min}" aria-label="Aumentar">+</button></div></div>`;
+
+function renderCT(){
+  $('ctRooms').innerHTML=st.ct.map((r,i)=>`<div class="room" data-i="${i}">
+    <div class="rh"><span class="tag">${String.fromCharCode(65+i)}</span>
+      <input aria-label="Nome do ambiente" data-k="nome" value="${esc(r.nome)}">
+      <button class="x" data-ctdel aria-label="Remover ambiente" ${st.ct.length<=1?'disabled':''}>×</button></div>
+    <div class="ctg">
+      ${stepper('area',r.area,'Área (m²)',i,1,1)}
+      <div><label>Sol da tarde</label><div class="seg s2" role="group" aria-label="Sol da tarde"><button data-sol="0" aria-pressed="${!r.sol}">Não</button><button data-sol="1" aria-pressed="${!!r.sol}">Sim</button></div></div>
+      ${stepper('pes',r.pes,'Pessoas',i,1,1)}
+      ${stepper('ele',r.ele,'Eletrônicos',i,1,0)}
+    </div>
+    <p class="ctline" id="ctl${i}"></p></div>`).join('');
+  $('ctAdd').disabled=st.ct.length>=5;
+  updateCT();
+}
+function updateCT(){
+  let tot=0,over=[];
+  const rows=st.ct.map((r,i)=>{const n=need(r),c=recCap(n);tot+=n;if(!c)over.push(r.nome);
+    const extraP=Math.max(0,(+r.pes||1)-1);
+    $('ctl'+i).innerHTML=`${num(r.area)} m² × ${r.sol?800:600}${extraP?` + ${extraP} pessoa${extraP>1?'s':''} extra × 600`:''}${+r.ele?` + ${r.ele} eletrônico${r.ele>1?'s':''} × 600`:''} = <b>${fmt(n)} BTU/h</b> → ${c?`<b>Hi Wall ${fmt(c)}</b>`:'<b class="badtxt">acima de 24.000</b>'}`;
+    return `<tr><td>${esc(r.nome)}</td><td class="n">${fmt(n)}</td><td class="n">${c?fmt(c):'—'}</td></tr>`}).join('');
+  const sum=st.ct.reduce((s,r)=>s+(recCap(need(r))||0),0);
+  const al=[];
+  if(over.length)al.push(['e',`${over.map(esc).join(', ')}: carga acima de 24.000 BTU/h, maior que a maior evaporadora Hi Wall. Divida o ambiente em duas evaporadoras ou avalie outra solução.`]);
+  if(st.ct.length<2)al.push(['w','O Multi Split precisa de pelo menos 2 ambientes. Com 1 ambiente, a indicação é um split convencional.']);
+  al.push(['o','Estimativa simplificada para residências e escritórios pequenos: 600 BTU/h por m² (800 com sol da tarde), mais 600 por pessoa além da primeira e 600 por eletrônico. Cozinhas, grandes áreas de vidro, pé‑direito alto ou último andar pedem avaliação técnica.']);
+  const ok=!over.length&&st.ct.length>=2;
+  $('ctRes').innerHTML=`<div class="hero">
+    <div class="k">Carga térmica total estimada</div><div class="big">${fmt(tot)} <span style="font-size:.45em;font-weight:700">BTU/h</span></div>
+    <div class="code">${st.ct.length} ambiente${st.ct.length>1?'s':''} · evaporadoras indicadas somam ${fmt(sum)} BTU/h</div>
+    <div class="deliv"><table><thead><tr><th>Ambiente</th><th class="n">Necessário</th><th class="n">Evaporadora</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <button class="btn light" id="ctSend" ${ok?'':'disabled'}>Levar para o dimensionador →</button>
+  </div><ul class="alerts">${al.map(([k,t])=>`<li class="${k}">${t}</li>`).join('')}</ul>`;
+  save();
+}
+$('ctRooms').addEventListener('click',e=>{const room=e.target.closest('.room');if(!room)return;const i=+room.dataset.i,r=st.ct[i];
+  const d=e.target.closest('[data-d]'),so=e.target.closest('[data-sol]'),x=e.target.closest('[data-ctdel]');
+  if(d){const k=d.dataset.k;r[k]=Math.max(+d.dataset.min,(+r[k]||0)+(+d.dataset.d));room.querySelector(`input[data-k=${k}]`).value=r[k];updateCT()}
+  else if(so){r.sol=so.dataset.sol==='1';room.querySelectorAll('[data-sol]').forEach(b=>b.setAttribute('aria-pressed',b===so));updateCT()}
+  else if(x&&st.ct.length>1){st.ct.splice(i,1);renderCT()}});
+$('ctRooms').addEventListener('input',e=>{const k=e.target.dataset.k;if(!k)return;const r=st.ct[+e.target.closest('.room').dataset.i];r[k]=k==='nome'?e.target.value:+e.target.value;updateCT()});
+$('ctAdd').onclick=()=>{const nm=['Quarto 2','Escritório','Quarto 3','Cozinha'];st.ct.push({nome:nm[st.ct.length-3]||'Ambiente',area:10,sol:false,pes:1,ele:1});renderCT()};
+$('ctReset').onclick=()=>{st.ct=defCT();renderCT()};
+$('ctRes').addEventListener('click',e=>{if(!e.target.closest('#ctSend'))return;
+  st.rooms=st.ct.map((r,i)=>({nome:r.nome,cap:recCap(need(r)),dist:(st.rooms[i]&&st.rooms[i].dist)||10}));pick=null;full();go('dimensionador');window.scrollTo({top:document.querySelector('.tabs').offsetTop})});
+
+/* ===== Abas ===== */
+function go(v){const c=v==='carga';$('pgDim').hidden=c;$('pgCarga').hidden=!c;
+  document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===(c?'carga':'dimensionador')));
+  if(location.hash!=='#'+(c?'carga':'dimensionador'))history.replaceState(null,'','#'+(c?'carga':'dimensionador'));}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){go(b.dataset.tab);window.scrollTo({top:document.querySelector('.tabs').offsetTop,behavior:'auto'})}});
+window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
+renderCT();
+if(location.hash==='#carga')go('carga');
+
 
 $('rooms').addEventListener('click',e=>{const room=e.target.closest('.room');if(!room)return;const i=+room.dataset.i,r=st.rooms[i];
   const cb=e.target.closest('[data-cap]'),d=e.target.closest('[data-d]'),x=e.target.closest('[data-del]');
